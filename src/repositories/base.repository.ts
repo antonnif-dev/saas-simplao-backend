@@ -1,0 +1,87 @@
+import { db } from '../config/firebase';
+import { Firestore } from 'firebase-admin/firestore';
+
+export class BaseRepository<T> {
+  protected collectionName: string;
+
+  constructor(collectionName: string) {
+    this.collectionName = collectionName;
+  }
+  /* Rota com coleções no root
+    private getCollection(tenantId: string) {
+      return db.collection(this.collectionName);
+    }
+  */
+
+  private getCollection(tenantId: string) {
+    console.log('🔥 FIRESTORE PATH:', `tenants/${tenantId}/${this.collectionName}`);
+    return db
+      .collection('tenants')
+      .doc(tenantId)
+      .collection(this.collectionName);
+  }
+
+
+  async create(tenantId: string, data: any): Promise<T> {
+    const docRef = this.getCollection(tenantId).doc();
+    const payload = {
+      ...data,
+      tenantId, // FORÇA O TENANT ID
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    await docRef.set(payload);
+    return { id: docRef.id, ...payload } as T;
+  }
+  /* Rota com coleções no root
+    async findAll(tenantId: string): Promise<T[]> {
+      const snapshot = await this.getCollection(tenantId)
+        .where('tenantId', '==', tenantId)
+        .get();
+  
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as T[];
+    }
+  
+
+  async findAll(tenantId: string): Promise<T[]> {
+    const snapshot = await this.getCollection(tenantId).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as T[];
+  }
+*/
+
+  async findById(tenantId: string, id: string): Promise<T | null> {
+    const doc = await this.getCollection(tenantId).doc(id).get();
+    if (!doc.exists) return null;
+
+    const data = doc.data();
+    if (data?.tenantId !== tenantId) return null; // TRAVA DE VAZAMENTO DE DADOS
+
+    return { id: doc.id, ...data } as T;
+  }
+
+  async update(tenantId: string, id: string, data: Partial<T>): Promise<void> {
+    // Verifica propriedade antes de update
+    const docRef = this.getCollection(tenantId).doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists || doc.data()?.tenantId !== tenantId) {
+      throw new Error('Document not found or access denied');
+    }
+
+    await docRef.update({
+      ...data,
+      updatedAt: new Date()
+    });
+  }
+
+  async delete(tenantId: string, id: string): Promise<void> {
+    const docRef = this.getCollection(tenantId).doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists || doc.data()?.tenantId !== tenantId) {
+      throw new Error('Document not found or access denied');
+    }
+
+    await docRef.delete(); // Hard Delete conforme pedido
+  }
+}
