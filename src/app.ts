@@ -1,10 +1,13 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import 'dotenv/config';
+import express from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 
-// Importação das rotas (vamos criar abaixo)
-import router from './routes';
+import cors from "cors";
+import type { CorsOptions } from "cors";
+
+import helmet from "helmet";
+import "dotenv/config";
+
+import router from "./routes";
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -27,52 +30,58 @@ app.use(cors({
 }));
 */
 
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = process.env.NODE_ENV === "production";
 
-app.use(cors({
-  origin: (origin, callback) => {
+const corsOptions: CorsOptions = {
+  origin: (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void
+  ) => {
     // Requisições sem origin (Postman, mobile, SSR)
     if (!origin) return callback(null, true);
 
     if (!isProd) {
-      // DEV → aceita qualquer localhost e subdomínios
-      if (origin.match(/^http:\/\/.*localhost(:\d+)?$/)) {
+      // DEV → aceita localhost e subdomínios
+      if (/^http:\/\/.*localhost(:\d+)?$/.test(origin)) {
         return callback(null, true);
       }
     } else {
       // PROD → domínio da Vercel e subdomínios
       if (
-        origin.endsWith('.vercel.app') ||
-        origin === 'https://seu-dominio.com' ||
-        origin.endsWith('.seu-dominio.com')
+        origin === "https://simplao-frontend.vercel.app" ||
+        origin.endsWith(".vercel.app") ||
+        origin.endsWith(".simplao-frontend.vercel.app")
       ) {
         return callback(null, true);
       }
     }
 
-    callback(new Error('Not allowed by CORS'));
+    return callback(new Error("Not allowed by CORS"));
   },
-  credentials: true
-}));
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 
 // 3. Rotas da API
-app.use('/api/v1', router);
+app.use("/api/v1", router);
 
-// 4. Rota de Health Check (Para testar se está vivo)
-app.get('/', (req: Request, res: Response) => {
+// 4. Rota de Health Check
+app.get("/", (req: Request, res: Response) => {
   res.json({
-    status: 'online',
-    system: 'SaaS Psicológico Kernel v1.0',
-    timestamp: new Date()
+    status: "online",
+    system: "SaaS Psicológico Kernel v1.0",
+    timestamp: new Date(),
   });
 });
 
 // 5. Middleware Global de Erros
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error(err.stack);
+app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+  const error = err as { stack?: string; message?: string };
+  console.error(error.stack || error.message || err);
   res.status(500).json({
-    error: 'Internal Server Error',
-    message: err.message
+    error: "Internal Server Error",
+    message: error.message || "Unknown error",
   });
 });
 
