@@ -1,5 +1,6 @@
 //import { Firestore } from 'firebase-admin/firestore';
 import { db } from "../config/firebase";
+import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 
 export class PatientRepository<T = any> {
   protected collectionName: string;
@@ -19,7 +20,7 @@ export class PatientRepository<T = any> {
   // ✅ NOVO: findAll
   async findAll(tenantId: string): Promise<T[]> {
     const snap = await this.getCollection(tenantId).get();
-    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as T));
+    return snap.docs.map((doc: QueryDocumentSnapshot) => ({ id: doc.id, ...doc.data() } as T));
   }
 
   async create(tenantId: string, data: any): Promise<T> {

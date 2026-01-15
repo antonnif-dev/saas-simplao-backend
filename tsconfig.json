@@ -2,22 +2,24 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
-
     "module": "commonjs",
     "target": "es2022",
     "moduleResolution": "node",
-
-    "types": ["node"],
-
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "types": [
+      "node"
+    ],
     "sourceMap": true,
     "declaration": false,
-
     "strict": true,
     //"verbatimModuleSyntax": true,
-    "isolatedModules": true,
+    "isolatedModules": false,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/**/*.ts"
+  ]
 }
