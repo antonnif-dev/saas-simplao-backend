@@ -1,56 +1,33 @@
-import express from "express";
-import type { Express, Request, Response, NextFunction } from "express";
-
-import cors from "cors";
-import type { CorsOptions } from "cors";
-
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
+import cors, { type CorsOptions } from "cors";
 import helmet from "helmet";
 import "dotenv/config";
 
 import router from "./routes";
 
 const app: Express = express();
-const PORT = process.env.PORT || 3001;
 
-// 1. Segurança e Parsers
+// 1) Segurança e parsers
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/* Somente localhost:3000 funcionando
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || origin.match(/^http:\/\/localhost/)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
-*/
-
+// 2) CORS
 const isProd = process.env.NODE_ENV === "production";
 
 const corsOptions: CorsOptions = {
-  origin: (
-    origin: string | undefined,
-    callback: (err: Error | null, allow?: boolean) => void
-  ) => {
-    // Requisições sem origin (Postman, mobile, SSR)
+  origin: (origin, callback) => {
+    // Requisições sem origin (Postman, SSR, etc.)
     if (!origin) return callback(null, true);
 
     if (!isProd) {
-      // DEV → aceita localhost e subdomínios
-      if (/^http:\/\/.*localhost(:\d+)?$/.test(origin)) {
-        return callback(null, true);
-      }
+      // DEV: aceita localhost e subdomínios
+      if (/^http:\/\/.*localhost(:\d+)?$/.test(origin)) return callback(null, true);
     } else {
-      // PROD → domínio da Vercel e subdomínios
+      // PROD: seu frontend na Vercel
       if (
         origin === "https://simplao-frontend.vercel.app" ||
-        origin.endsWith(".vercel.app") ||
-        origin.endsWith(".simplao-frontend.vercel.app")
+        origin.endsWith(".vercel.app")
       ) {
         return callback(null, true);
       }
@@ -63,10 +40,10 @@ const corsOptions: CorsOptions = {
 
 app.use(cors(corsOptions));
 
-// 3. Rotas da API
+// 3) Rotas
 app.use("/api/v1", router);
 
-// 4. Rota de Health Check
+// 4) Health check
 app.get("/", (req: Request, res: Response) => {
   res.json({
     status: "online",
@@ -75,18 +52,13 @@ app.get("/", (req: Request, res: Response) => {
   });
 });
 
-// 5. Middleware Global de Erros
-app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
-  const error = err as { stack?: string; message?: string };
-  console.error(error.stack || error.message || err);
+// 5) Middleware global de erro
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error(err?.stack || err);
   res.status(500).json({
     error: "Internal Server Error",
-    message: error.message || "Unknown error",
+    message: err?.message || "Unknown error",
   });
 });
 
-// 6. Iniciar Servidor
-app.listen(PORT, () => {
-  console.log(`🚀 Backend rodando na porta ${PORT}`);
-  console.log(`📡 Ambiente: ${process.env.NODE_ENV}`);
-});
+export default app;

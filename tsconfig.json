@@ -1,27 +1,23 @@
 {
   "compilerOptions": {
-    "rootDir": "./src",
+    "rootDir": ".",
     "outDir": "./dist",
 
-    "module": "commonjs",
-    "target": "ES2020",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "target": "es2022",
+    "moduleResolution": "nodenext",
 
     "types": ["node"],
 
     "sourceMap": true,
+    "declaration": false,
 
     "strict": true,
-
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
-
-    "verbatimModuleSyntax": false,
-    "isolatedModules": false,
-    "noUncheckedSideEffectImports": false,
-
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*.ts", "api/**/*.ts"]
 }
