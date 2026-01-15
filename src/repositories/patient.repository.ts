@@ -1,7 +1,7 @@
-import { db } from '../config/firebase';
-import { Firestore } from 'firebase-admin/firestore';
+//import { Firestore } from 'firebase-admin/firestore';
+import { db } from "../config/firebase";
 
-export class PatientRepository<T> {
+export class PatientRepository<T = any> {
   protected collectionName: string;
 
   constructor(collectionName: string) {
@@ -9,13 +9,18 @@ export class PatientRepository<T> {
   }
 
   private getCollection(tenantId: string) {
-    console.log('🔥 FIRESTORE PATH:', `tenants/${tenantId}/${this.collectionName}`);
+    console.log("🔥 FIRESTORE PATH:", `tenants/${tenantId}/${this.collectionName}`);
     return db
-      .collection('tenants')
+      .collection("tenants")
       .doc(tenantId)
       .collection(this.collectionName);
   }
 
+  // ✅ NOVO: findAll
+  async findAll(tenantId: string): Promise<T[]> {
+    const snap = await this.getCollection(tenantId).get();
+    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as T));
+  }
 
   async create(tenantId: string, data: any): Promise<T> {
     const docRef = this.getCollection(tenantId).doc();
@@ -23,7 +28,7 @@ export class PatientRepository<T> {
       ...data,
       tenantId,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
     await docRef.set(payload);
     return { id: docRef.id, ...payload } as T;
@@ -44,12 +49,12 @@ export class PatientRepository<T> {
     const doc = await docRef.get();
 
     if (!doc.exists || doc.data()?.tenantId !== tenantId) {
-      throw new Error('Document not found or access denied');
+      throw new Error("Document not found or access denied");
     }
 
     await docRef.update({
       ...data,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
   }
 
@@ -58,7 +63,7 @@ export class PatientRepository<T> {
     const doc = await docRef.get();
 
     if (!doc.exists || doc.data()?.tenantId !== tenantId) {
-      throw new Error('Document not found or access denied');
+      throw new Error("Document not found or access denied");
     }
 
     await docRef.delete();
