@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { auth } from '../config/firebase';
-import jwt from 'jsonwebtoken';
+import * as jwt from "jsonwebtoken";
 import { z } from 'zod';
 
 // Extensão do Request para TypeScript
